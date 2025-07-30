@@ -16,9 +16,11 @@ const pollyClient = new PollyClient({
 function App() {
   const [text, setText] = useState("");
   const [voice, setVoice] = useState("Salli");
-  const [audioFile, setAudioFile] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
 
   const convertTextToSpeech = async () => {
+    if (!text.trim()) return alert("Please enter some text");
+
     try {
       const command = new SynthesizeSpeechCommand({
         OutputFormat: "mp3",
@@ -27,9 +29,13 @@ function App() {
       });
 
       const response = await pollyClient.send(command);
-      setAudioFile(response);
+      const buffer = await response.AudioStream.transformToByteArray();
+      const blob = new Blob([buffer], { type: "audio/mpeg" });
+
+      setAudioBlob(blob);
     } catch (err) {
       console.error("Polly Error:", err);
+      alert("Failed to convert text to speech.");
     }
   };
 
@@ -43,7 +49,7 @@ function App() {
         setVoice={setVoice}
         convertTextToSpeech={convertTextToSpeech}
       />
-      <AudioPlayer audioFile={audioFile} />
+      <AudioPlayer audioBlob={audioBlob} />
     </div>
   );
 }
